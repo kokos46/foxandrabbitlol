@@ -11,7 +11,7 @@ enum class Direction(val code: Int, val dx: Int, val dy: Int) {
     }
 }
 
-abstract class Animals(
+abstract class Animals: objectOnGrid(
     var x: Int,
     var y: Int,
     val stability: Int, // S - через сколько ходов меняет направление
@@ -37,11 +37,14 @@ abstract class Animals(
 
     fun isTooOld(): Boolean = age >= maxAge;
 
+    abstract fun Eat()
+
+    abstract fun makeChild()
 }
 
 class Rabbit(
     x: Int, y: Int, stability: Int, initialDirection: Direction, birthTurn: Int, initialId: Int
-) : Animals(x, y, stability, initialDirection, birthTurn, initialId) {
+) : GrassEater(x, y, stability, initialDirection, birthTurn, initialId) {
 
     override val maxAge: Int = 10;
     override val stepSize: Int = 1;
@@ -52,7 +55,7 @@ class Rabbit(
 // 4. Класс Лиса
 class Fox(
     x: Int, y: Int, stability: Int, initialDirection: Direction, birthTurn: Int, initialId: Int
-) : Animals(x, y, stability, initialDirection, birthTurn, initialId) {
+) : Predator(x, y, stability, initialDirection, birthTurn, initialId) {
 
     var foodEaten: Int = 0 // Количество съеденных зайцев
 
@@ -61,4 +64,35 @@ class Fox(
 
     fun shouldReproduce(): Boolean = foodEaten >= 2
     fun resetFood() { foodEaten = 0 }
+}
+
+
+abstract class Predator : Animals {
+
+    fun eat (meat : ArrayList<GrassEater>){
+        return ArrayList<GrassEater>
+    }
+
+}
+
+abstract class GrassEater : Animals{
+
+    fun eat(grass: ArrayList<Green>){
+
+        return ArrayList<Green>
+    }
+}
+
+abstract class Grass: objectOnGrid {
+
+    abstract fun MakeChild()
+}
+
+abstract class objectOnGrid {
+    var x
+    var y
+}
+
+abstract class Other: objectOnGrid{
+
 }
