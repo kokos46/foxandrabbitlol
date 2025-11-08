@@ -11,88 +11,125 @@ enum class Direction(val code: Int, val dx: Int, val dy: Int) {
     }
 }
 
-abstract class Animals: objectOnGrid(
-    var x: Int,
-    var y: Int,
-    val stability: Int, // S - через сколько ходов меняет направление
+fun getNextBirthOrder(): Long = 0L
+
+abstract class Animals(
     initialDirection: Direction,
-    val birthTurn: Int, // Ход, на котором животное родилось
-    val initialId: Int // Уникальный ID для реализации правила старшинства (чем меньше, тем старше)
-) {
-    abstract val maxAge: Int;
-    abstract val stepSize: Int;
-    var age: Int = 0;
+    val stability: Int, // Стабильность
+    var birthOrder: Long // Правило старшинства
+) : objectOnGrid() {
 
-    var direction: Direction = initialDirection;
+    abstract val maxAge: Int
+    abstract val stepSize: Int
 
-    fun getOlder(){
-        age++;
+    var age: Int = 0
+    var direction: Direction = initialDirection
+    var movesSinceDirChange: Int = 0
+
+    fun getOlder() { age++ }
+    fun isTooOld(): Boolean = age >= maxAge
+
+    fun move(N: Int, M: Int) {
+        // Движение на stepSize
+        repeat(stepSize) {
+            x = (x + direction.dx + N) % N
+            y = (y + direction.dy + M) % M
+        }
+
+        // Смена направления (только если stability > 0)
+        movesSinceDirChange++
+        if (stability > 0 && movesSinceDirChange >= stability) {
+            direction = direction.next()
+            movesSinceDirChange = 0
+        }
     }
 
-    fun move(N: Int, M: Int){
-        val moveSize = stepSize;
-        x = (x + moveSize * direction.dx + N) % N;
-        y = (y + moveSize * direction.dy + M) % M;
+    abstract fun performEat()
+    abstract fun makeChild(): Animals?
+
+    fun setBirthOrder(order: Long) {
+        this.birthOrder = order
     }
-
-    fun isTooOld(): Boolean = age >= maxAge;
-
-    abstract fun Eat()
-
-    abstract fun makeChild()
 }
 
 class Rabbit(
-    x: Int, y: Int, stability: Int, initialDirection: Direction, birthTurn: Int, initialId: Int
-) : GrassEater(x, y, stability, initialDirection, birthTurn, initialId) {
+    initialDirection: Direction,
+    stability: Int,
+    birthOrder: Long,
+) : GrassEater(initialDirection, stability, birthOrder) {
+    // Специфические правила Зайца
+    override val maxAge: Int = 10
+    override val stepSize: Int = 1
 
-    override val maxAge: Int = 10;
-    override val stepSize: Int = 1;
+    override fun performEat() {} // Заяц ест только для размножения в этой модели
 
-    fun shouldReproduce(): Boolean = age == 5 || age == 10
+    override fun makeChild(): Rabbit? {
+        return if (age == 5 || age == 10) {
+            Rabbit(this.direction, this.stability, getNextBirthOrder())
+        } else {
+            null
+        }
+    }
 }
 
-// 4. Класс Лиса
+// Конкретный класс Лиса (наследуется от Predator)
 class Fox(
-    x: Int, y: Int, stability: Int, initialDirection: Direction, birthTurn: Int, initialId: Int
-) : Predator(x, y, stability, initialDirection, birthTurn, initialId) {
+    initialDirection: Direction,
+    stability: Int,
+    birthOrder: Long,
+    var foodEaten: Int = 0
+) : Predator(initialDirection, stability, birthOrder) {
+    // Специфические правила Лисы
+    override val maxAge: Int = 15
+    override val stepSize: Int = 2
 
-    var foodEaten: Int = 0 // Количество съеденных зайцев
+    override fun performEat() {} // Лиса ест на этапе "Питание" в Model
 
-    override val maxAge: Int = 15 // Умирает после достижения возраста 15
-    override val stepSize: Int = 2 // Движется на 2 клетки
-
-    fun shouldReproduce(): Boolean = foodEaten >= 2
-    fun resetFood() { foodEaten = 0 }
-}
-
-
-abstract class Predator : Animals {
-
-    fun eat (meat : ArrayList<GrassEater>){
-        return ArrayList<GrassEater>
-    }
-
-}
-
-abstract class GrassEater : Animals{
-
-    fun eat(grass: ArrayList<Green>){
-
-        return ArrayList<Green>
+    override fun makeChild(): Fox? {
+        return if (foodEaten >= 2) {
+            foodEaten = 0
+            Fox(this.direction, this.stability, getNextBirthOrder())
+        } else {
+            null
+        }
     }
 }
 
-abstract class Grass: objectOnGrid {
 
+abstract class GrassEater(
+    initialDirection: Direction,
+    stability: Int,
+    birthOrder: Long
+) : Animals(initialDirection, stability, birthOrder) {
+
+}
+
+// Общий класс для всех Хищников
+abstract class Predator(
+    initialDirection: Direction,
+    stability: Int,
+    birthOrder: Long
+) : Animals(initialDirection, stability, birthOrder) {
+
+}
+
+abstract class Grass: objectOnGrid() {
     abstract fun MakeChild()
 }
 
 abstract class objectOnGrid {
-    var x
-    var y
+    var x: Int = 0
+    var y: Int = 0
+
+    // Мы используем поля напрямую в Model, но оставим геттеры/сеттеры для инкапсуляции
+    fun getX(): Int = this.x
+    fun getY(): Int = this.y
+    fun setCoords(newX: Int, newY: Int) {
+        this.x = newX
+        this.y = newY
+    }
 }
 
-abstract class Other: objectOnGrid{
+abstract class Other: objectOnGrid(){
 
 }
